@@ -29,9 +29,12 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Initializing and loading VGGT model...")
 # model = VGGT.from_pretrained("facebook/VGGT-1B")  # another way to load the model
 
-model = VGGT()
-_URL = "https://huggingface.co/facebook/VGGT-1B/resolve/main/model.pt"
-model.load_state_dict(torch.hub.load_state_dict_from_url(_URL))
+model = VGGT()  
+model.load_state_dict(torch.load("/mnt/A/xiongzhuang/Projects/vggt/checkpoints/model.pt"))
+
+# model = VGGT()
+# _URL = "https://huggingface.co/facebook/VGGT-1B/resolve/main/model.pt"
+# model.load_state_dict(torch.hub.load_state_dict_from_url(_URL))
 
 
 model.eval()
@@ -289,20 +292,21 @@ def update_visualization(
         return None, f"No reconstruction available at {predictions_path}. Please run 'Reconstruct' first."
 
     key_list = [
-        "pose_enc",
-        "depth",
-        "depth_conf",
-        "world_points",
-        "world_points_conf",
-        "images",
-        "extrinsic",
-        "intrinsic",
-        "world_points_from_depth",
+        'pose_enc',
+        'depth',
+        'depth_conf',
+        'world_points',
+        'world_points_conf',
+        'images',
+        'extrinsic',
+        'intrinsic',
+        'world_points_from_depth',
     ]
 
     loaded = np.load(predictions_path)
     predictions = {key: np.array(loaded[key]) for key in key_list}
 
+    
     glbfile = os.path.join(
         target_dir,
         f"glbscene_{conf_thres}_{frame_filter.replace('.', '_').replace(':', '').replace(' ', '_')}_maskb{mask_black_bg}_maskw{mask_white_bg}_cam{show_cam}_sky{mask_sky}_pred{prediction_mode.replace(' ', '_')}.glb",
@@ -389,6 +393,7 @@ with gr.Blocks(
     }
     """,
 ) as demo:
+
     # Instead of gr.State, we use a hidden Textbox:
     is_example = gr.Textbox(label="is_example", visible=False, value="None")
     num_images = gr.Textbox(label="num_images", visible=False, value="None")
@@ -532,7 +537,13 @@ with gr.Blocks(
             prediction_mode,
             is_example,
         ],
-        outputs=[reconstruction_output, log_output, target_dir_output, frame_filter, image_gallery],
+        outputs=[
+            reconstruction_output,
+            log_output,
+            target_dir_output,
+            frame_filter,
+            image_gallery,
+        ],
         fn=example_pipeline,
         cache_examples=False,
         examples_per_page=50,
